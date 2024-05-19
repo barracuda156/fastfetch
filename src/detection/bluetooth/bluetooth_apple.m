@@ -4,7 +4,13 @@
 
 const char* ffDetectBluetooth(FFlist* devices /* FFBluetoothResult */)
 {
-    NSArray<IOBluetoothDevice*>* ioDevices = IOBluetoothDevice.pairedDevices;
+    NSMutableArray *ioDevices = [NSMutableArray new];
+
+    NSArray *pairedDevices = [IOBluetoothDevice pairedDevices];
+    if (pairedDevices) {
+      [ioDevices addObjectsFromArray:pairedDevices];
+    }
+
     if(!ioDevices)
         return "IOBluetoothDevice.pairedDevices failed";
 

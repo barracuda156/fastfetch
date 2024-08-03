@@ -1,5 +1,7 @@
+#include <AvailabilityMacros.h>
 #include "gpu.h"
 
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 101100
 #import <Metal/MTLDevice.h>
 
 #ifndef MAC_OS_VERSION_13_0
@@ -9,9 +11,11 @@
     #define MTLFeatureSet_macOS_GPUFamily1_v4 ((MTLFeatureSet) 10004)
     #define MTLFeatureSet_macOS_GPUFamily2_v1 ((MTLFeatureSet) 10005)
 #endif
+#endif
 
 const char* ffGpuDetectMetal(FFlist* gpus)
 {
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 101000
     if (@available(macOS 10.13, *))
     {
         for (id<MTLDevice> device in MTLCopyAllDevices())
@@ -47,5 +51,6 @@ const char* ffGpuDetectMetal(FFlist* gpus)
         }
         return NULL;
     }
+#endif
     return "Metal API is not supported by this macOS version";
 }

@@ -4,6 +4,7 @@
 #include "util/apple/cf_helpers.h"
 #include "util/apple/smc_temps.h"
 
+#include <AvailabilityMacros.h>
 #include <IOKit/graphics/IOGraphicsLib.h>
 
 const char* ffGpuDetectMetal(FFlist* gpus);
@@ -99,7 +100,9 @@ const char* ffDetectGPUImpl(const FFGPUOptions* options, FFlist* gpus)
         gpu->dedicated.total = gpu->dedicated.used = gpu->shared.total = gpu->shared.used = FF_GPU_VMEM_SIZE_UNSET;
         gpu->type = FF_GPU_TYPE_UNKNOWN;
         gpu->frequency = FF_GPU_FREQUENCY_UNSET;
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1060 && !defined(__ppc__)
         IORegistryEntryGetRegistryEntryID(registryEntry, &gpu->deviceId);
+#endif
         ffStrbufInitStatic(&gpu->platformApi, "Metal");
 
         ffStrbufInit(&gpu->driver); // Ok for both Apple and Intel

@@ -19,15 +19,7 @@ static void appendColor(FFstrbuf* str, NSDictionary* color)
 
 void ffDetectCursor(FFCursorResult* result)
 {
-    NSError* error;
-    NSString* fileName = [NSString stringWithFormat:@"file://%s/Library/Preferences/com.apple.universalaccess.plist", instance.state.platform.homeDir.chars];
-    NSDictionary* dict = [NSDictionary dictionaryWithContentsOfURL:[NSURL URLWithString:fileName]
-                                       error:&error];
-    if(error)
-    {
-        ffStrbufAppendS(&result->error, error.localizedDescription.UTF8String);
-        return;
-    }
+    NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:[NSHomeDirectory() stringByAppendingPathComponent:@"/Library/Preferences/com.apple.universalaccess.plist"]];
 
     NSDictionary* color;
 

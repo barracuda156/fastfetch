@@ -1,10 +1,15 @@
-
+#include <AvailabilityMacros.h>
 #include "fastfetch.h"
 #include "opengl.h"
 
 #define GL_SILENCE_DEPRECATION
 #include <OpenGL/gl.h>
 #include <OpenGL/OpenGL.h> // This brings in CGL, not GL
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1070
+#define kCGLPFAOpenGLProfile 99
+#define kCGLOGLPVersion_3_2_Core 0x3200
+#endif
 
 void ffOpenGLHandleResult(FFOpenGLResult* result, __typeof__(&glGetString) ffglGetString);
 

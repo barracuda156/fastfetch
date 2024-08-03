@@ -1,7 +1,11 @@
 #include "camera.h"
 #include "common/io/io.h"
 
+#include <AvailabilityMacros.h>
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
 #import <AVFoundation/AVCaptureDevice.h>
+#endif
 
 // warning: 'AVCaptureDeviceTypeExternalUnknown' is deprecated
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"

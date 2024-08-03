@@ -1,4 +1,4 @@
-
+#include <AvailabilityMacros.h>
 #include "fastfetch.h"
 #include "opengl.h"
 
@@ -38,7 +38,7 @@ const char* cglDetectOpenGL(FFOpenGLResult* result)
 {
     CGLPixelFormatObj pixelFormat;
     CGLPixelFormatAttribute attrs[] = {
-        kCGLPFAOpenGLProfile, (CGLPixelFormatAttribute) kCGLOGLPVersion_3_2_Core,
+        kCGLPFADoubleBuffer,
         kCGLPFAAccelerated,
         0
     };

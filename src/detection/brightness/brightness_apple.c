@@ -14,10 +14,11 @@ extern IOReturn IOAVServiceCopyEDID(IOAVServiceRef service, CFDataRef* x2) __att
 extern IOReturn IOAVServiceReadI2C(IOAVServiceRef service, uint32_t chipAddress, uint32_t offset, void* outputBuffer, uint32_t outputBufferSize) __attribute__((weak_import));
 extern IOReturn IOAVServiceWriteI2C(IOAVServiceRef service, uint32_t chipAddress, uint32_t dataAddress, void* inputBuffer, uint32_t inputBufferSize) __attribute__((weak_import));
 #else
-// DDC/CI (Intel)
+// DDC/CI (Intel / PowerPC)
 #include <IOKit/IOKitLib.h>
 #include <IOKit/graphics/IOGraphicsLib.h>
 #include <IOKit/i2c/IOI2CInterface.h>
+#include <ApplicationServices/ApplicationServices.h>
 extern void CGSServiceForDisplayNumber(CGDirectDisplayID display, io_service_t* service) __attribute__((weak_import));
 #endif
 

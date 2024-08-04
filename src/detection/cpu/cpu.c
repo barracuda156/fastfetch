@@ -24,6 +24,9 @@ const char* ffCPUAppleCodeToName(uint32_t code)
     // https://github.com/AsahiLinux/docs/wiki/Codenames
     switch (code)
     {
+        case 10: return "PowerPC 7400";
+        case 11: return "PowerPC 7450";
+        case 100: return "PowerPC 970";
         case 8103: return "Apple M1";
         case 6000: return "Apple M1 Pro";
         case 6001: return "Apple M1 Max";

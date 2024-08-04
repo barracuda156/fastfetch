@@ -13,11 +13,20 @@
 #endif
 #endif
 
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1090
+#define POOLSTART NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+#define POOLEND   [pool release];
+#else
+#define POOLSTART
+#define POOLEND
+#endif
+
 const char* ffGpuDetectMetal(FFlist* gpus)
 {
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 101000
     if (@available(macOS 10.13, *))
     {
+        POOLSTART
         for (id<MTLDevice> device in MTLCopyAllDevices())
         {
             FFGPUResult* gpu = NULL;
@@ -49,6 +58,7 @@ const char* ffGpuDetectMetal(FFlist* gpus)
             gpu->type = device.hasUnifiedMemory ? FF_GPU_TYPE_INTEGRATED : FF_GPU_TYPE_DISCRETE;
             #endif
         }
+        POOLEND
         return NULL;
     }
 #endif

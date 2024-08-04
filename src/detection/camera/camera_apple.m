@@ -4,7 +4,7 @@
 #include <AvailabilityMacros.h>
 
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
-#import <AVFoundation/AVCaptureDevice.h>
+#include <AVFoundation/AVCaptureDevice.h>
 #endif
 
 // warning: 'AVCaptureDeviceTypeExternalUnknown' is deprecated

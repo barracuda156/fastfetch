@@ -8,6 +8,14 @@
 #include <CoreGraphics/CoreGraphics.h>
 #include <AvailabilityMacros.h>
 
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1090
+#define POOLSTART NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+#define POOLEND   [pool release];
+#else
+#define POOLSTART
+#define POOLEND
+#endif
+
 extern CFDictionaryRef CoreDisplay_DisplayCreateInfoDictionary(CGDirectDisplayID display) __attribute__((weak_import));
 
 #ifndef MAC_OS_X_VERSION_10_15
@@ -20,7 +28,7 @@ extern CFDictionaryRef CoreDisplay_IODisplayCreateInfoDictionary(io_service_t fr
 
 static bool detectHdrSupportWithNSScreen(FFDisplayResult* display)
 {
-    NSScreen* mainScreen = NSScreen.mainScreen;
+    POOLSTART
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 101100
     if (display->primary)
     {
@@ -47,11 +55,13 @@ static bool detectHdrSupportWithNSScreen(FFDisplayResult* display)
         }
     }
 #endif
+    POOLEND
     return false;
 }
 
 const char* ffDetectMonitor(FFlist* results)
 {
+    POOLSTART
     #ifdef MAC_OS_X_VERSION_10_15
     if(!CoreDisplay_DisplayCreateInfoDictionary) return "CoreDisplay_DisplayCreateInfoDictionary is not available";
     #endif
@@ -127,6 +137,6 @@ const char* ffDetectMonitor(FFlist* results)
         if (ffCfDictGetInt64(displayInfo, CFSTR("DisplayWeekManufacture"), &week) == NULL)
             monitor->manufactureWeek = (uint16_t) week;
     }
-
+    POOLEND
     return NULL;
 }

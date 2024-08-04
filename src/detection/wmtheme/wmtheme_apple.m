@@ -2,9 +2,19 @@
 #include "wmtheme.h"
 
 #import <Foundation/Foundation.h>
+#include <AvailabilityMacros.h>
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1090
+#define POOLSTART NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+#define POOLEND   [pool release];
+#else
+#define POOLSTART
+#define POOLEND
+#endif
 
 bool ffDetectWmTheme(FFstrbuf* themeOrError)
 {
+    POOLSTART
     NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:[NSHomeDirectory() stringByAppendingPathComponent:@"/Library/Preferences/.GlobalPreferences.plist"]];
 
     NSNumber* wmThemeColor = [dict valueForKey:@"AppleAccentColor"];
@@ -28,5 +38,6 @@ bool ffDetectWmTheme(FFstrbuf* themeOrError)
 
     NSString* wmTheme = [dict valueForKey:@"AppleInterfaceStyle"];
     ffStrbufAppendF(themeOrError, " (%s)", wmTheme ? wmTheme.UTF8String : "Light");
+    POOLEND
     return true;
 }

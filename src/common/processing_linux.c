@@ -19,7 +19,10 @@
     #include <sys/sysctl.h>
 #endif
 #if defined(__APPLE__)
-    #include <libproc.h>
+  #include <AvailabilityMacros.h>
+  #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
+      #include <libproc.h>
+  #endif
 #elif defined(__sun)
     #include <procfs.h>
 #endif
@@ -185,6 +188,7 @@ void ffProcessGetInfoLinux(pid_t pid, FFstrbuf* processName, FFstrbuf* exe, cons
             ffStrbufSetS(exe, arg0);
         }
     }
+    #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050 // No proc_pidpath on 10.4
     else
     {
         ffStrbufEnsureFixedLengthFree(exe, PATH_MAX);
@@ -196,7 +200,7 @@ void ffProcessGetInfoLinux(pid_t pid, FFstrbuf* processName, FFstrbuf* exe, cons
                 ffStrbufSet(exePath, exe);
         }
     }
-
+    #endif
     #elif defined(__FreeBSD__)
 
     size_t size = ARG_MAX;

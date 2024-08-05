@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <IOKit/IOKitLib.h>
+#include <AvailabilityMacros.h>
 
 static const char kSmcCmdReadBytes = 5;
 static const char kSmcCmdReadKeyInfo = 9;
@@ -87,7 +88,9 @@ static const char *smcCall(io_connect_t conn, uint32_t selector, SmcKeyData_t *i
 {
     size_t size = sizeof(SmcKeyData_t);
 
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
     if (IOConnectCallStructMethod(conn, selector, inputStructure, size, outputStructure, &size) != kIOReturnSuccess)
+#endif
         return "IOConnectCallStructMethod(conn) failed";
     return NULL;
 }

@@ -627,7 +627,7 @@ elseif(APPLE)
         src/common/networking_linux.c
         src/common/processing_linux.c
         src/common/sysctl.c
-        src/detection/battery/battery_apple.c
+        src/detection/battery/battery_nosupport.c
         src/detection/bios/bios_apple.c
         src/detection/bluetooth/bluetooth_nosupport.c
         src/detection/bluetoothradio/bluetoothradio_nosupport.c
@@ -641,7 +641,7 @@ elseif(APPLE)
         src/detection/cursor/cursor_nosupport.c
         src/detection/disk/disk_bsd.c
         src/detection/dns/dns_linux.c
-        src/detection/physicaldisk/physicaldisk_apple.c
+        src/detection/physicaldisk/physicaldisk_nosupport.c
         src/detection/physicalmemory/physicalmemory_nosupport.c
         src/detection/diskio/diskio_apple.c
         src/detection/displayserver/displayserver_apple.c
@@ -1096,7 +1096,6 @@ elseif(APPLE)
         PRIVATE "-framework Cocoa"
         PRIVATE "-framework CoreFoundation"
         PRIVATE "-framework CoreAudio"
-        PRIVATE "-framework CoreMedia"
         PRIVATE "-framework CoreVideo"
         PRIVATE "-framework IOBluetooth"
         PRIVATE "-framework IOKit"

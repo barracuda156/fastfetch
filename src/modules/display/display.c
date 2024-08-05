@@ -4,9 +4,7 @@
 #include "modules/display/display.h"
 #include "util/stringUtils.h"
 
-#include <math.h>
-
-#define FF_DISPLAY_NUM_FORMAT_ARGS 16
+#define FF_DISPLAY_NUM_FORMAT_ARGS 9
 
 static int sortByNameAsc(FFDisplayResult* a, FFDisplayResult* b)
 {
@@ -99,47 +97,35 @@ void ffPrintDisplay(FFDisplayOptions* options)
             }));
         }
 
-        FF_STRBUF_AUTO_DESTROY buffer = ffStrbufCreate();
-        double inch = sqrt(result->physicalWidth * result->physicalWidth + result->physicalHeight * result->physicalHeight) / 25.4;
-
         if(options->moduleArgs.outputFormat.length == 0)
         {
             ffPrintLogoAndKey(key.chars, 0, &options->moduleArgs, FF_PRINT_TYPE_NO_CUSTOM_KEY);
 
-            ffStrbufAppendF(&buffer, "%ix%i", result->width, result->height);
+            printf("%ix%i", result->width, result->height);
 
             if(result->refreshRate > 0)
             {
                 if(options->preciseRefreshRate)
-                    ffStrbufAppendF(&buffer, " @ %g Hz", ((int) (result->refreshRate * 1000 + 0.5)) / 1000.0);
+                    printf(" @ %gHz", ((int) (result->refreshRate * 1000 + 0.5)) / 1000.0);
                 else
-                    ffStrbufAppendF(&buffer, " @ %i Hz", (uint32_t) (result->refreshRate + 0.5));
+                    printf(" @ %iHz", (uint32_t) (result->refreshRate + 0.5));
             }
 
             if(
                 result->scaledWidth > 0 && result->scaledWidth != result->width &&
                 result->scaledHeight > 0 && result->scaledHeight != result->height)
-                ffStrbufAppendF(&buffer, " (as %ix%i)", result->scaledWidth, result->scaledHeight);
-
-            if (inch > 0)
-                ffStrbufAppendF(&buffer, " in %i″", (uint32_t) (inch + 0.5));
+                printf(" (as %ix%i)", result->scaledWidth, result->scaledHeight);
 
             if(result->type != FF_DISPLAY_TYPE_UNKNOWN)
-                ffStrbufAppendS(&buffer, result->type == FF_DISPLAY_TYPE_BUILTIN ? " [Built-in]" : " [External]");
-
-            if (result->hdrEnabled)
-                ffStrbufAppendS(&buffer, " [HDR]");
+                fputs(result->type == FF_DISPLAY_TYPE_BUILTIN ? " [Built-in]" : " [External]", stdout);
 
             if(moduleIndex > 0 && result->primary)
-                ffStrbufAppendS(&buffer, " *");
+                printf(" *");
 
-            ffStrbufPutTo(&buffer, stdout);
-            ffStrbufClear(&buffer);
+            putchar('\n');
         }
         else
         {
-            double ppi = sqrt(result->width * result->width + result->height * result->height) / inch;
-
             FF_PRINT_FORMAT_CHECKED(key.chars, 0, &options->moduleArgs, FF_PRINT_TYPE_NO_CUSTOM_KEY, FF_DISPLAY_NUM_FORMAT_ARGS, ((FFformatarg[]) {
                 {FF_FORMAT_ARG_TYPE_UINT, &result->width, "width"},
                 {FF_FORMAT_ARG_TYPE_UINT, &result->height, "height"},
@@ -150,13 +136,6 @@ void ffPrintDisplay(FFDisplayOptions* options)
                 {FF_FORMAT_ARG_TYPE_STRING, displayType, "type"},
                 {FF_FORMAT_ARG_TYPE_UINT, &result->rotation, "rotation"},
                 {FF_FORMAT_ARG_TYPE_BOOL, &result->primary, "is-primary"},
-                {FF_FORMAT_ARG_TYPE_UINT, &result->physicalWidth, "physical-width"},
-                {FF_FORMAT_ARG_TYPE_UINT, &result->physicalHeight, "physical-height"},
-                {FF_FORMAT_ARG_TYPE_DOUBLE, &inch, "inch"},
-                {FF_FORMAT_ARG_TYPE_DOUBLE, &ppi, "ppi"},
-                {FF_FORMAT_ARG_TYPE_UINT8, &result->bitDepth, "bit-depth"},
-                {FF_FORMAT_ARG_TYPE_BOOL, &result->hdrEnabled, "hdr-enabled"},
-                {FF_FORMAT_ARG_TYPE_BOOL, &result->wcgEnabled, "wcg-enabled"},
             }));
         }
     }
@@ -306,27 +285,15 @@ void ffGenerateDisplayJsonResult(FF_MAYBE_UNUSED FFDisplayOptions* options, yyjs
     FF_LIST_FOR_EACH(FFDisplayResult, item, dsResult->displays)
     {
         yyjson_mut_val* obj = yyjson_mut_arr_add_obj(doc, arr);
+        yyjson_mut_obj_add_uint(doc, obj, "width", item->width);
+        yyjson_mut_obj_add_uint(doc, obj, "height", item->height);
         yyjson_mut_obj_add_uint(doc, obj, "id", item->id);
         yyjson_mut_obj_add_strbuf(doc, obj, "name", &item->name);
         yyjson_mut_obj_add_bool(doc, obj, "primary", item->primary);
-
-        yyjson_mut_val* output = yyjson_mut_obj_add_obj(doc, obj, "output");
-        yyjson_mut_obj_add_uint(doc, output, "width", item->width);
-        yyjson_mut_obj_add_uint(doc, output, "height", item->height);
-
-        yyjson_mut_val* scaled = yyjson_mut_obj_add_obj(doc, obj, "scaled");
-        yyjson_mut_obj_add_uint(doc, scaled, "width", item->scaledWidth);
-        yyjson_mut_obj_add_uint(doc, scaled, "height", item->scaledHeight);
-
-        yyjson_mut_val* physical = yyjson_mut_obj_add_obj(doc, obj, "physical");
-        yyjson_mut_obj_add_uint(doc, physical, "width", item->physicalWidth);
-        yyjson_mut_obj_add_uint(doc, physical, "height", item->physicalHeight);
-
         yyjson_mut_obj_add_real(doc, obj, "refreshRate", item->refreshRate);
         yyjson_mut_obj_add_uint(doc, obj, "rotation", item->rotation);
-        yyjson_mut_obj_add_uint(doc, obj, "bitDepth", item->bitDepth);
-        yyjson_mut_obj_add_bool(doc, obj, "hdrEnabled", item->hdrEnabled);
-        yyjson_mut_obj_add_bool(doc, obj, "wcgEnabled", item->wcgEnabled);
+        yyjson_mut_obj_add_uint(doc, obj, "scaledHeight", item->scaledHeight);
+        yyjson_mut_obj_add_uint(doc, obj, "scaledWidth", item->scaledWidth);
 
         switch (item->type)
         {
@@ -355,13 +322,6 @@ void ffPrintDisplayHelpFormat(void)
         "Screen type (builtin, external or unknown) - type",
         "Screen rotation (in degrees) - rotation",
         "True if being the primary screen - is-primary",
-        "Screen physical width (in millimeters) - physical-width",
-        "Screen physical height (in millimeters) - physical-height",
-        "Physical diagonal length in inches - inch",
-        "Pixels per inch (PPI) - ppi",
-        "Bits per color channel - bit-depth",
-        "True if high dynamic range (HDR) is enabled - hdr-enabled",
-        "True if wide color gamut (WCG) is enabled - wcg-enabled",
     }));
 }
 

@@ -2,6 +2,7 @@
 #include "common/io/io.h"
 #include "font.h"
 
+#include <Foundation/Foundation.h>
 #include <AppKit/NSFont.h>
 #include <AvailabilityMacros.h>
 

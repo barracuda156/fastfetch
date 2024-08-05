@@ -1,111 +1,78 @@
 #include "displayserver.h"
 #include "util/apple/cf_helpers.h"
-#include "util/stringUtils.h"
+#include "common/sysctl.h"
 
 #include <stdlib.h>
+#include <ctype.h>
 #include <string.h>
 #include <assert.h>
-#include <CoreGraphics/CGDirectDisplay.h>
-#include <CoreVideo/CVDisplayLink.h>
+#include <ApplicationServices/ApplicationServices.h>
+#include <AvailabilityMacros.h>
 
-extern CFDictionaryRef CoreDisplay_DisplayCreateInfoDictionary(CGDirectDisplayID display) __attribute__((weak_import));
-#ifndef MAC_OS_X_VERSION_10_15
-#import <IOKit/graphics/IOGraphicsLib.h>
-extern CFDictionaryRef CoreDisplay_IODisplayCreateInfoDictionary(io_service_t framebuffer, IOOptionBits options)  __attribute__((weak_import));
-#endif
+typedef union
+{
+    uint8_t rawData[0xDC];
+    struct
+    {
+        uint32_t mode;
+        uint32_t flags;		// 0x4
+        uint32_t width;		// 0x8
+        uint32_t height;	// 0xC
+        uint32_t depth;		// 0x10
+        uint32_t dc2[42];
+        uint16_t dc3;
+        uint16_t freq;		// 0xBC
+        uint32_t dc4[4];
+        float density;		// 0xD0
+    } derived;
+} modes_D4;
+
+void CGSGetCurrentDisplayMode(CGDirectDisplayID display, int* modeNum);
+void CGSGetDisplayModeDescriptionOfLength(CGDirectDisplayID display, int idx, modes_D4* mode, int length);
 
 static void detectDisplays(FFDisplayServerResult* ds)
 {
-    CGDirectDisplayID screens[128];
-    uint32_t screenCount;
-    if(CGGetOnlineDisplayList(sizeof(screens) / sizeof(screens[0]), screens, &screenCount) != kCGErrorSuccess)
+    CGDisplayCount screenCount;
+    CGGetOnlineDisplayList(INT_MAX, NULL, &screenCount);
+    if(screenCount == 0)
         return;
+
+    CGDirectDisplayID* screens = malloc(screenCount * sizeof(CGDirectDisplayID));
+    CGGetOnlineDisplayList(INT_MAX, screens, &screenCount);
 
     for(uint32_t i = 0; i < screenCount; i++)
     {
-        CGDirectDisplayID screen = screens[i];
-        CGDisplayModeRef mode = CGDisplayCopyDisplayMode(screen);
-        if(mode)
-        {
-            //https://github.com/glfw/glfw/commit/aab08712dd8142b642e2042e7b7ba563acd07a45
-            double refreshRate = CGDisplayModeGetRefreshRate(mode);
+        int modeID;
+        CGSGetCurrentDisplayMode(screens[i], &modeID);
+        modes_D4 mode;
+        CGSGetDisplayModeDescriptionOfLength(screens[i], modeID, &mode, 0xD4);
 
-            if (refreshRate == 0)
-            {
-                CVDisplayLinkRef link;
-                if(CVDisplayLinkCreateWithCGDisplay(screen, &link) == kCVReturnSuccess)
-                {
-                    const CVTime time = CVDisplayLinkGetNominalOutputVideoRefreshPeriod(link);
-                    if (!(time.flags & kCVTimeIsIndefinite))
-                        refreshRate = time.timeScale / (double) time.timeValue; //59.97...
-                    CVDisplayLinkRelease(link);
-                }
-            }
-
-            FF_STRBUF_AUTO_DESTROY name = ffStrbufCreate();
-            #ifdef MAC_OS_X_VERSION_10_15
-            if(CoreDisplay_DisplayCreateInfoDictionary)
-            {
-                CFDictionaryRef FF_CFTYPE_AUTO_RELEASE displayInfo = CoreDisplay_DisplayCreateInfoDictionary(screen);
-                if(displayInfo)
-                {
-                    CFDictionaryRef productNames;
-                    if(!ffCfDictGetDict(displayInfo, CFSTR(kDisplayProductName), &productNames))
-                        ffCfDictGetString(productNames, CFSTR("en_US"), &name);
-                }
-            }
-            #else
-            if(CoreDisplay_IODisplayCreateInfoDictionary)
-            {
-                io_service_t servicePort = CGDisplayIOServicePort(screen);
-                CFDictionaryRef FF_CFTYPE_AUTO_RELEASE displayInfo = CoreDisplay_IODisplayCreateInfoDictionary(servicePort, kIODisplayOnlyPreferredName);
-                if(displayInfo)
-                {
-                    CFDictionaryRef productNames;
-                    if(!ffCfDictGetDict(displayInfo, CFSTR(kDisplayProductName), &productNames))
-                        ffCfDictGetString(productNames, CFSTR("en_US"), &name);
-                }
-            }
-            #endif
-
-            CGSize size = CGDisplayScreenSize(screen);
-
-            FFDisplayResult* display = ffdsAppendDisplay(ds,
-                (uint32_t)CGDisplayModeGetPixelWidth(mode),
-                (uint32_t)CGDisplayModeGetPixelHeight(mode),
-                refreshRate,
-                (uint32_t)CGDisplayModeGetWidth(mode),
-                (uint32_t)CGDisplayModeGetHeight(mode),
-                (uint32_t)CGDisplayRotation(screen),
-                &name,
-                CGDisplayIsBuiltin(screen) ? FF_DISPLAY_TYPE_BUILTIN : FF_DISPLAY_TYPE_EXTERNAL,
-                CGDisplayIsMain(screen),
-                (uint64_t)screen,
-                (uint32_t) (size.width + 0.5),
-                (uint32_t) (size.height + 0.5)
-            );
-            if (display)
-            {
-                // https://stackoverflow.com/a/33519316/9976392
-                // Also shitty, but better than parsing `CFCopyDescription(mode)`
-                CFDictionaryRef dict = (CFDictionaryRef) *((int64_t *)mode + 2);
-                if (CFGetTypeID(dict) == CFDictionaryGetTypeID())
-                {
-                    int32_t bitDepth;
-                    ffCfDictGetInt(dict, kCGDisplayBitsPerSample, &bitDepth);
-                    display->bitDepth = (uint8_t) bitDepth;
-                }
-            }
-            CGDisplayModeRelease(mode);
-        }
-        CGDisplayRelease(screen);
+        double refreshRate = ffdsParseRefreshRate(mode.derived.freq);
+        ffdsAppendDisplay(ds,
+            mode.derived.width,
+            mode.derived.height,
+            refreshRate,
+            0,
+            0,
+            0,
+            NULL,
+            FF_DISPLAY_TYPE_UNKNOWN,
+            true,
+            0
+        );
     }
+
+    free(screens);
 }
 
 void ffConnectDisplayServerImpl(FFDisplayServerResult* ds)
 {
     {
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1080
         FF_CFTYPE_AUTO_RELEASE CFMachPortRef port = CGWindowServerCreateServerPort();
+#else
+        FF_CFTYPE_AUTO_RELEASE CFMachPortRef port = CGWindowServerCFMachPort();
+#endif
         if (port)
         {
             ffStrbufSetStatic(&ds->wmProcessName, "WindowServer");

@@ -58,13 +58,8 @@ typedef struct FFDisplayResult
     FFstrbuf name;
     FFDisplayType type;
     uint32_t rotation;
-    uint64_t id; // platform dependent
-    uint32_t physicalWidth;
-    uint32_t physicalHeight;
     bool primary;
-    uint8_t bitDepth;
-    bool hdrEnabled;
-    bool wcgEnabled;
+    uint64_t id; // platform dependent
 } FFDisplayResult;
 
 typedef struct FFDisplayServerResult
@@ -79,7 +74,9 @@ typedef struct FFDisplayServerResult
 
 const FFDisplayServerResult* ffConnectDisplayServer();
 
-FFDisplayResult* ffdsAppendDisplay(
+uint32_t ffdsParseRefreshRate(int32_t refreshRate);
+
+bool ffdsAppendDisplay(
     FFDisplayServerResult* result,
     uint32_t width,
     uint32_t height,
@@ -90,6 +87,4 @@ FFDisplayResult* ffdsAppendDisplay(
     FFstrbuf* name,
     FFDisplayType type,
     bool primary,
-    uint64_t id,
-    uint32_t physicalWidth,
-    uint32_t physicalHeight);
+    uint64_t id);

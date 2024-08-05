@@ -1,6 +1,24 @@
 #include "displayserver.h"
 
-FFDisplayResult* ffdsAppendDisplay(
+uint32_t ffdsParseRefreshRate(int32_t refreshRate)
+{
+    if(refreshRate <= 0)
+        return 0;
+
+    int remainder = refreshRate % 5;
+    if(remainder >= 3)
+        refreshRate += (5 - remainder);
+    else
+        refreshRate -= remainder;
+
+    // All other typicall refresh rates are dividable by 5
+    if(refreshRate == 145)
+        refreshRate = 144;
+
+    return (uint32_t) refreshRate;
+}
+
+bool ffdsAppendDisplay(
     FFDisplayServerResult* result,
     uint32_t width,
     uint32_t height,
@@ -11,12 +29,10 @@ FFDisplayResult* ffdsAppendDisplay(
     FFstrbuf* name,
     FFDisplayType type,
     bool primary,
-    uint64_t id,
-    uint32_t physicalWidth,
-    uint32_t physicalHeight)
+    uint64_t id)
 {
     if(width == 0 || height == 0)
-        return NULL;
+        return false;
 
     FFDisplayResult* display = ffListAdd(&result->displays);
     display->width = width;
@@ -27,16 +43,10 @@ FFDisplayResult* ffdsAppendDisplay(
     display->rotation = rotation;
     ffStrbufInitMove(&display->name, name);
     display->type = type;
-    display->id = id;
-    display->physicalWidth = physicalWidth;
-    display->physicalHeight = physicalHeight;
     display->primary = primary;
+    display->id = id;
 
-    display->bitDepth = 0;
-    display->hdrEnabled = false;
-    display->wcgEnabled = false;
-
-    return display;
+    return true;
 }
 
 void ffConnectDisplayServerImpl(FFDisplayServerResult* ds);

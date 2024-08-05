@@ -4,6 +4,7 @@
 #include "util/stringUtils.h"
 
 #include <IOKit/IOKitLib.h>
+#include <AvailabilityMacros.h>
 
 static const char* getProductNameWithHwModel(const FFstrbuf* hwModel)
 {
@@ -238,6 +239,7 @@ const char* getProductNameWithIokit(FFstrbuf* result)
 
 const char* getOthersByIokit(FFHostResult* host)
 {
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
     FF_IOOBJECT_AUTO_RELEASE io_registry_entry_t registryEntry = IOServiceGetMatchingService(MACH_PORT_NULL, IOServiceMatching("IOPlatformExpertDevice"));
     if (!registryEntry)
         return "IOServiceGetMatchingService() failed";
@@ -253,7 +255,7 @@ const char* getOthersByIokit(FFHostResult* host)
     FF_CFTYPE_AUTO_RELEASE CFStringRef manufacturer = IORegistryEntryCreateCFProperty(registryEntry, CFSTR("manufacturer"), kCFAllocatorDefault, kNilOptions);
     if (manufacturer)
         ffCfStrGetString(manufacturer, &host->vendor);
-
+#endif
     return NULL;
 }
 

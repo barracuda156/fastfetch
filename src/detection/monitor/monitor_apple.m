@@ -7,15 +7,21 @@
 #import <Foundation/Foundation.h>
 #import <CoreGraphics/CoreGraphics.h>
 
+#include <AvailabilityMacros.h>
+
 #ifdef MAC_OS_X_VERSION_10_15
 extern CFDictionaryRef CoreDisplay_DisplayCreateInfoDictionary(CGDirectDisplayID display) __attribute__((weak_import));
 #else
 #include <IOKit/graphics/IOGraphicsLib.h>
+#ifndef MAC_OS_X_VERSION_10_8
+#define CoreDisplay_IODisplayCreateInfoDictionary IODisplayCreateInfoDictionary
+#endif
 #endif
 
 static bool detectHdrSupportWithNSScreen(FFDisplayResult* display)
 {
     NSScreen* mainScreen = NSScreen.mainScreen;
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 101100
     if (display->primary)
     {
         #ifdef MAC_OS_X_VERSION_10_15
@@ -40,6 +46,7 @@ static bool detectHdrSupportWithNSScreen(FFDisplayResult* display)
             }
         }
     }
+#endif
     return false;
 }
 

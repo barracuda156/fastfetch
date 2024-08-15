@@ -2,8 +2,19 @@
 
 #import <IOBluetooth/IOBluetooth.h>
 
+#include <AvailabilityMacros.h>
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1090
+#define POOLSTART NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+#define POOLEND   [pool release];
+#else
+#define POOLSTART
+#define POOLEND
+#endif
+
 const char* ffDetectBluetooth(FFlist* devices /* FFBluetoothResult */)
 {
+    POOLSTART
     NSArray<IOBluetoothDevice*>* ioDevices = IOBluetoothDevice.pairedDevices;
     if(!ioDevices)
         return "IOBluetoothDevice.pairedDevices failed";
@@ -87,6 +98,6 @@ const char* ffDetectBluetooth(FFlist* devices /* FFBluetoothResult */)
             ffStrbufTrimRight(&device->type, ',');
         }
     }
-
+    POOLEND
     return NULL;
 }

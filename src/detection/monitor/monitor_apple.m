@@ -18,8 +18,17 @@ extern CFDictionaryRef CoreDisplay_DisplayCreateInfoDictionary(CGDirectDisplayID
 #endif
 #endif
 
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1090
+#define POOLSTART NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+#define POOLEND   [pool release];
+#else
+#define POOLSTART
+#define POOLEND
+#endif
+
 static bool detectHdrSupportWithNSScreen(FFDisplayResult* display)
 {
+    POOLSTART
     NSScreen* mainScreen = NSScreen.mainScreen;
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 101100
     if (display->primary)
@@ -47,6 +56,7 @@ static bool detectHdrSupportWithNSScreen(FFDisplayResult* display)
         }
     }
 #endif
+    POOLEND
     return false;
 }
 
@@ -55,6 +65,7 @@ const char* ffDetectMonitor(FFlist* results)
     #ifdef MAC_OS_X_VERSION_10_15
     if(!CoreDisplay_DisplayCreateInfoDictionary) return "CoreDisplay_DisplayCreateInfoDictionary is not available";
     #endif
+    POOLSTART
     const FFDisplayServerResult* displayServer = ffConnectDisplayServer();
 
     FF_LIST_FOR_EACH(FFDisplayResult, display, displayServer->displays)
@@ -127,6 +138,6 @@ const char* ffDetectMonitor(FFlist* results)
         if (ffCfDictGetInt64(displayInfo, CFSTR("DisplayWeekManufacture"), &week) == NULL)
             monitor->manufactureWeek = (uint16_t) week;
     }
-
+    POOLEND
     return NULL;
 }

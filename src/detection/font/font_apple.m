@@ -4,6 +4,16 @@
 
 #import <AppKit/NSFont.h>
 
+#include <AvailabilityMacros.h>
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1090
+#define POOLSTART NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+#define POOLEND   [pool release];
+#else
+#define POOLSTART
+#define POOLEND
+#endif
+
 static void generateString(FFFontResult* font)
 {
     if(font->fonts[0].length > 0)
@@ -23,6 +33,7 @@ static void generateString(FFFontResult* font)
 
 const char* ffDetectFontImpl(FFFontResult* result)
 {
+    POOLSTART
     ffStrbufAppendS(&result->fonts[0], [NSFont systemFontOfSize:12].familyName.UTF8String);
     ffStrbufAppendS(&result->fonts[1], [NSFont userFontOfSize:12].familyName.UTF8String);
     #ifdef MAC_OS_X_VERSION_10_15
@@ -32,6 +43,6 @@ const char* ffDetectFontImpl(FFFontResult* result)
     #endif
     ffStrbufAppendS(&result->fonts[3], [NSFont userFixedPitchFontOfSize:12].familyName.UTF8String);
     generateString(result);
-
+    POOLEND
     return NULL;
 }

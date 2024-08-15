@@ -236,7 +236,7 @@ uint32_t yyjson_version(void) {
 #elif (defined(__BIG_ENDIAN__) && __BIG_ENDIAN__ == 1) || \
     defined(__ARMEB__) || defined(__THUMBEB__) || defined(__AARCH64EB__) || \
     defined(_MIPSEB) || defined(__MIPSEB) || defined(__MIPSEB__) || \
-    defined(__or1k__) || defined(__OR1K__)
+    defined(__or1k__) || defined(__OR1K__) || defined(__POWERPC__)
 #   define YYJSON_ENDIAN YYJSON_BIG_ENDIAN
 
 #else

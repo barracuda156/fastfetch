@@ -142,13 +142,12 @@ static const char* dumpFatHeader(FILE *objFile, bool (*cb)(const char *str, uint
         }
         else
         {
-            struct fat_arch_64 arch;
+            struct fat_arch arch;
             if (!readData(objFile, &arch, sizeof(arch), (off_t) (sizeof(header) + i * sizeof(arch))))
                 continue;
 
             if (needSwap)
-                swap_fat_arch_64(&arch, 1, NX_UnknownByteOrder);
-
+                swap_fat_arch(&arch, 1, NX_UnknownByteOrder);
             machHeaderOffset = (off_t)arch.offset;
         }
 

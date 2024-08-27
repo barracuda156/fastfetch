@@ -2,7 +2,8 @@
 #include "common/io/io.h"
 #include "font.h"
 
-#import <AppKit/NSFont.h>
+#include <Foundation/Foundation.h>
+#include <AppKit/NSFont.h>
 
 #include <AvailabilityMacros.h>
 

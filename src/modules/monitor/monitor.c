@@ -6,7 +6,7 @@
 
 #include <math.h>
 
-#define FF_MONITOR_NUM_FORMAT_ARGS 11
+#define FF_MONITOR_NUM_FORMAT_ARGS 10
 
 void ffPrintMonitor(FFMonitorOptions* options)
 {
@@ -53,8 +53,6 @@ void ffPrintMonitor(FFMonitorOptions* options)
             ffPrintLogoAndKey(key.chars, 0, &options->moduleArgs, FF_PRINT_TYPE_NO_CUSTOM_KEY);
 
             printf("%ux%u px", display->width, display->height);
-            if (display->refreshRate > 0)
-                printf(" @ %g Hz", ((int) (display->refreshRate * 1000 + 0.5)) / 1000.0);
             if (inch > 0)
                 printf(" - %ux%u mm (%.2f inches, %.2f ppi)\n", display->physicalWidth, display->physicalHeight, inch, ppi);
             else
@@ -82,7 +80,6 @@ void ffPrintMonitor(FFMonitorOptions* options)
                 FF_FORMAT_ARG(display->manufactureYear, "manufacture-year"),
                 FF_FORMAT_ARG(display->manufactureWeek, "manufacture-week"),
                 FF_FORMAT_ARG(buf, "serial"),
-                FF_FORMAT_ARG(display->refreshRate, "refresh-rate"),
             }));
         }
 
@@ -157,8 +154,6 @@ void ffGenerateMonitorJsonResult(FF_MAYBE_UNUSED FFMonitorOptions* options, yyjs
             yyjson_mut_obj_add_uint(doc, physical, "height", item->physicalHeight);
             yyjson_mut_obj_add_uint(doc, physical, "width", item->physicalWidth);
 
-            yyjson_mut_obj_add_real(doc, obj, "refreshRate", item->refreshRate);
-
             if (item->manufactureYear)
             {
                 yyjson_mut_val* manufactureDate = yyjson_mut_obj_add_obj(doc, obj, "manufactureDate");
@@ -196,7 +191,6 @@ void ffPrintMonitorHelpFormat(void)
         "Year of manufacturing - manufacture-year",
         "Nth week of manufacturing in the year - manufacture-week",
         "Serial number - serial",
-        "Maximum refresh rate in Hz - refresh-rate",
     }));
 }
 

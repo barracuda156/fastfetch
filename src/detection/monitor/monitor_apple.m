@@ -117,22 +117,9 @@ const char* ffDetectMonitor(FFlist* results)
         monitor->physicalHeight = (uint32_t) (size.height + 0.5);
         monitor->hdrCompatible = CFDictionaryContainsKey(displayInfo, CFSTR("ReferencePeakHDRLuminance")) ||
             detectHdrSupportWithNSScreen(display);
-        monitor->serial = CGDisplaySerialNumber((CGDirectDisplayID) display->id);
-
-        FF_CFTYPE_AUTO_RELEASE CFArrayRef modes = CGDisplayCopyAllDisplayModes((CGDirectDisplayID) display->id, NULL);
-        double maxRefreshRate = 0;
-        for (uint32_t j = 0; j < CFArrayGetCount(modes); ++j)
-        {
-            CGDisplayModeRef mode = (CGDisplayModeRef) CFArrayGetValueAtIndex(modes, j);
-            if (CGDisplayModeGetWidth(mode) == (uint32_t) width && CGDisplayModeGetHeight(mode) == (uint32_t) height)
-            {
-                double refreshRate = CGDisplayModeGetRefreshRate(mode);
-                if (refreshRate > maxRefreshRate) maxRefreshRate = refreshRate;
-            }
-        }
-        monitor->refreshRate = maxRefreshRate;
-
-        int64_t year, week;
+        int64_t serial, year, week;
+        if (ffCfDictGetInt64(displayInfo, CFSTR("DisplaySerialNumber"), &serial) == NULL)
+            monitor->serial = (uint32_t) (uint64_t) serial;
         if (ffCfDictGetInt64(displayInfo, CFSTR("DisplayYearManufacture"), &year) == NULL)
             monitor->manufactureYear = (uint16_t) year;
         if (ffCfDictGetInt64(displayInfo, CFSTR("DisplayWeekManufacture"), &week) == NULL)

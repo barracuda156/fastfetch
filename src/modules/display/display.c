@@ -146,6 +146,7 @@ void ffPrintDisplay(FFDisplayOptions* options)
                 FF_FORMAT_ARG(result->name, "name"),
                 FF_FORMAT_ARG(displayType, "type"),
                 FF_FORMAT_ARG(result->rotation, "rotation"),
+                FF_FORMAT_ARG(result->primary, "is-primary"),
             }));
         }
     }

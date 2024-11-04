@@ -5,15 +5,7 @@
 
 bool ffDetectWmTheme(FFstrbuf* themeOrError)
 {
-    NSError* error;
-    NSString* fileName = [NSString stringWithFormat:@"file://%s/Library/Preferences/.GlobalPreferences.plist", instance.state.platform.homeDir.chars];
-    NSDictionary* dict = [NSDictionary dictionaryWithContentsOfURL:[NSURL URLWithString:fileName]
-                                       error:&error];
-    if(error)
-    {
-        ffStrbufAppendS(themeOrError, error.localizedDescription.UTF8String);
-        return false;
-    }
+    NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:[NSHomeDirectory() stringByAppendingPathComponent:@"/Library/Preferences/.GlobalPreferences.plist"]];
 
     NSNumber* wmThemeColor = dict[@"AppleAccentColor"];
     if(!wmThemeColor)

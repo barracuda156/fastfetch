@@ -6,25 +6,21 @@
 
 #include <stdlib.h>
 #include <string.h>
-#import <Foundation/Foundation.h>
+#include <Foundation/Foundation.h>
 
 static void parseSystemVersion(FFOSResult* os)
 {
-    NSError* error;
-    NSString* fileName = @"file:///System/Library/CoreServices/SystemVersion.plist";
-    NSDictionary* dict = [NSDictionary dictionaryWithContentsOfURL:[NSURL URLWithString:fileName]
-                                       error:&error];
-    if(error)
-        return;
+    NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:
+        @"/System/Library/CoreServices/SystemVersion.plist"];
 
     NSString* value;
 
-    if((value = dict[@"ProductName"]))
-        ffStrbufInitS(&os->name, value.UTF8String);
-    if((value = dict[@"ProductUserVisibleVersion"]))
-        ffStrbufInitS(&os->version, value.UTF8String);
-    if((value = dict[@"ProductBuildVersion"]))
-        ffStrbufInitS(&os->buildID, value.UTF8String);
+    if ((value = [dict objectForKey:@"ProductName"]))
+        ffStrbufInitS(&os->name, [value UTF8String]);
+    if ((value = [dict objectForKey:@"ProductUserVisibleVersion"]))
+        ffStrbufInitS(&os->version, [value UTF8String]);
+    if ((value = [dict objectForKey:@"ProductBuildVersion"]))
+        ffStrbufInitS(&os->buildID, [value UTF8String]);
 }
 
 static bool detectOSCodeName(FFOSResult* os)

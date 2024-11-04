@@ -16,19 +16,11 @@ static void detectIterm2(FFTerminalFontResult* terminalFont)
         return;
     }
 
-    NSError* error;
-    NSString* fileName = [NSString stringWithFormat:@"file://%s/Library/Preferences/com.googlecode.iterm2.plist", instance.state.platform.homeDir.chars];
-    NSDictionary* dict = [NSDictionary dictionaryWithContentsOfURL:[NSURL URLWithString:fileName]
-                                       error:&error];
-    if(error)
-    {
-        ffStrbufAppendS(&terminalFont->error, error.localizedDescription.UTF8String);
-        return;
-    }
+    NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:[NSHomeDirectory() stringByAppendingPathComponent:@"/Library/Preferences/com.googlecode.iterm2.plist"]];
 
     for(NSDictionary* bookmark in dict[@"New Bookmarks"])
     {
-        if(![bookmark[@"Name"] isEqualToString:@(profile)])
+        if(![[bookmark valueForKey:@"Name"] isEqualToString:[NSString stringWithUTF8String:profile]])
             continue;
 
         NSString* normalFont = bookmark[@"Normal Font"];
@@ -37,14 +29,14 @@ static void detectIterm2(FFTerminalFontResult* terminalFont)
             ffStrbufAppendF(&terminalFont->error, "`Normal Font` key in profile `%s` doesn't exist", profile);
             return;
         }
-        ffFontInitWithSpace(&terminalFont->font, normalFont.UTF8String);
+        ffFontInitWithSpace(&terminalFont->font, [normalFont UTF8String]);
 
         NSNumber* useNonAsciiFont = bookmark[@"Use Non-ASCII Font"];
-        if(useNonAsciiFont.boolValue)
+        if([useNonAsciiFont boolValue])
         {
             NSString* nonAsciiFont = bookmark[@"Non Ascii Font"];
             if (nonAsciiFont)
-                ffFontInitWithSpace(&terminalFont->fallback, nonAsciiFont.UTF8String);
+                ffFontInitWithSpace(&terminalFont->fallback, [nonAsciiFont UTF8String]);
         }
         return;
     }
@@ -68,15 +60,7 @@ static void detectAppleTerminal(FFTerminalFontResult* terminalFont)
 
 static void detectWarpTerminal(FFTerminalFontResult* terminalFont)
 {
-    NSError* error;
-    NSString* fileName = [NSString stringWithFormat:@"file://%s/Library/Preferences/dev.warp.Warp-Stable.plist", instance.state.platform.homeDir.chars];
-    NSDictionary* dict = [NSDictionary dictionaryWithContentsOfURL:[NSURL URLWithString:fileName]
-                                       error:&error];
-    if(error)
-    {
-        ffStrbufAppendS(&terminalFont->error, error.localizedDescription.UTF8String);
-        return;
-    }
+    NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:[NSHomeDirectory() stringByAppendingPathComponent:@"/Library/Preferences/dev.warp.Warp-Stable.plist"]];
 
     NSString* fontName = dict[@"FontName"];
     if(!fontName)

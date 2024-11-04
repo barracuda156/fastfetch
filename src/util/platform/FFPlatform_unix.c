@@ -10,7 +10,10 @@
 #include <paths.h>
 
 #ifdef __APPLE__
+  #include <AvailabilityMacros.h>
+  #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
     #include <libproc.h>
+  #endif
     #include <sys/sysctl.h>
 #elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
     #include <sys/sysctl.h>
@@ -22,7 +25,7 @@ static void getExePath(FFPlatform* platform)
     #ifdef __linux__
         ssize_t exePathLen = readlink("/proc/self/exe", exePath, sizeof(exePath) - 1);
         exePath[exePathLen] = '\0';
-    #elif defined(__APPLE__)
+    #elif defined(__APPLE__) && (MAC_OS_X_VERSION_MIN_REQUIRED >= 1050)
         int exePathLen = proc_pidpath((int) getpid(), exePath, sizeof(exePath));
     #elif defined(__FreeBSD__) || defined(__NetBSD__)
         size_t exePathLen = sizeof(exePath);

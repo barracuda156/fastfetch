@@ -2,6 +2,13 @@
 
 #include "fastfetch.h"
 
+#ifdef __APPLE__
+#include <AvailabilityMacros.h>
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1060 || defined(__ppc__)
+#define CG_LEGACY_API
+#endif
+#endif
+
 #define FF_DE_PRETTY_PLASMA "KDE Plasma"
 #define FF_DE_PRETTY_GNOME "GNOME"
 #define FF_DE_PRETTY_GNOME_CLASSIC "GNOME Classic"
@@ -89,6 +96,10 @@ typedef struct FFDisplayServerResult
 } FFDisplayServerResult;
 
 const FFDisplayServerResult* ffConnectDisplayServer();
+
+#ifdef CG_LEGACY_API
+uint32_t ffdsParseRefreshRate(int32_t refreshRate);
+#endif
 
 FFDisplayResult* ffdsAppendDisplay(
     FFDisplayServerResult* result,

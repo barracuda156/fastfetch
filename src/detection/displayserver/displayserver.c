@@ -1,5 +1,27 @@
 #include "displayserver.h"
 
+#ifdef CG_LEGACY_API
+
+uint32_t ffdsParseRefreshRate(int32_t refreshRate)
+{
+    if(refreshRate <= 0)
+        return 0;
+
+    int remainder = refreshRate % 5;
+    if(remainder >= 3)
+        refreshRate += (5 - remainder);
+    else
+        refreshRate -= remainder;
+
+    // All other typicall refresh rates are dividable by 5
+    if(refreshRate == 145)
+        refreshRate = 144;
+
+    return (uint32_t) refreshRate;
+}
+
+#endif
+
 FFDisplayResult* ffdsAppendDisplay(
     FFDisplayServerResult* result,
     uint32_t width,

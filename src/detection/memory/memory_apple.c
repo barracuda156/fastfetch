@@ -28,7 +28,9 @@ const char* ffDetectMemory(FFMemoryResult* ram)
     ram->bytesUsed = ((uint64_t)
         + vmstat.active_count
         + vmstat.inactive_count
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
         + vmstat.speculative_count
+#endif
         + vmstat.wire_count
 #if (MAC_OS_X_VERSION_MIN_REQUIRED >= 1060) && !defined(__ppc__)
         + vmstat.compressor_page_count

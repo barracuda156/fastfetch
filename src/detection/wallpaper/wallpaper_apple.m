@@ -2,10 +2,14 @@
 #include "common/settings.h"
 #include "util/apple/osascript.h"
 
-#import <Foundation/Foundation.h>
+#include <Foundation/Foundation.h>
+#include <AvailabilityMacros.h>
 
 const char* ffDetectWallpaper(FFstrbuf* result)
 {
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED > 130000
+
     {
         // For Sonoma
         // https://github.com/JohnCoates/Aerial/issues/1332
@@ -18,16 +22,16 @@ const char* ffDetectWallpaper(FFstrbuf* result)
             NSArray* choices = [dict valueForKeyPath:@"SystemDefault.Desktop.Content.Choices"];
             if (choices.count > 0)
             {
-                NSDictionary* choice = choices[0];
-                NSArray* files = choice[@"Files"];
+                NSDictionary* choice = [choices objectAtIndex:0];
+                NSArray* files = [choice valueForKey:@"Files"];
                 if (files.count > 0)
                 {
-                    NSString* file = files[0][@"relative"];
+                    NSString* file = [[files objectAtIndex: 0] valueForKey: @"relative"];
                     ffStrbufAppendS(result, [NSURL URLWithString:file].path.UTF8String);
                 }
                 else
                 {
-                    NSString* provider = choice[@"Provider"];
+                    NSString* provider = [choice valueForKey:@"Provider"];
                     NSString* builtinPrefix = @"com.apple.wallpaper.choice.";
                     if ([provider hasPrefix:builtinPrefix])
                         provider = [provider substringFromIndex:builtinPrefix.length];
@@ -43,6 +47,8 @@ const char* ffDetectWallpaper(FFstrbuf* result)
                 return NULL;
         }
     }
+
+#endif
 
     #ifdef FF_HAVE_SQLITE3
 

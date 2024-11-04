@@ -3,7 +3,16 @@
 #include "util/smbiosHelper.h"
 #include "util/stringUtils.h"
 
-#import <Foundation/Foundation.h>
+#include <Foundation/Foundation.h>
+#include <AvailabilityMacros.h>
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1090
+#define POOLSTART NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+#define POOLEND   [pool release];
+#else
+#define POOLSTART
+#define POOLEND
+#endif
 
 static void appendDevice(
     FFlist* result,
@@ -11,7 +20,7 @@ static void appendDevice(
     NSString* vendor,
     NSString* size,
 
-    // Intel only
+    // Intel and PowerPC
     NSString* locator,
     NSString* serial,
     NSString* partNumber,
@@ -66,6 +75,7 @@ static void appendDevice(
 
 const char* ffDetectPhysicalMemory(FFlist* result)
 {
+    POOLSTART
     FF_STRBUF_AUTO_DESTROY buffer = ffStrbufCreate();
     if (ffProcessAppendStdOut(&buffer, (char* const[]) {
         "system_profiler",
@@ -77,31 +87,37 @@ const char* ffDetectPhysicalMemory(FFlist* result)
     }) != NULL)
         return "Starting `system_profiler SPMemoryDataType -xml -detailLevel full` failed";
 
-    NSArray* arr = [NSPropertyListSerialization propertyListWithData:[NSData dataWithBytes:buffer.chars length:buffer.length]
-                    options:NSPropertyListImmutable
-                    format:nil
-                    error:nil];
-    if (!arr || !arr.count)
+    NSString* error;
+    NSData* plistData = [NSData dataWithBytes:buffer.chars length:buffer.length];
+    NSPropertyListFormat format;
+    NSArray* arr = [NSPropertyListSerialization propertyListFromData:plistData
+                    mutabilityOption:NSPropertyListImmutable
+                    format:&format
+                    errorDescription:&error];
+    if (!arr) {
         return "system_profiler SPMemoryDataType returned an empty array";
+        [error release];
+    }
 
-    for (NSDictionary* data in arr[0][@"_items"])
+    for (NSDictionary* data in [[arr objectAtIndex:0] objectForKey:@"_items"])
     {
-        if (data[@"_items"])
+        if ([data objectForKey:@"_items"])
         {
-            // for Intel
-            for (NSDictionary* item in data[@"_items"])
+            // for Intel and PowerPC
+            for (NSDictionary* item in [data objectForKey:@"_items"])
             {
                 appendDevice(result,
-                    item[@"dimm_type"],
-                    item[@"dimm_manufacturer"],
-                    item[@"dimm_size"],
-                    item[@"_name"],
-                    item[@"dimm_serial_number"],
-                    item[@"dimm_part_number"],
-                    item[@"dimm_speed"],
-                    !![data[@"global_ecc_state"] isEqualToString:@"ecc_enabled"]);
+                    [item valueForKey:@"dimm_type"],
+                    [item valueForKey:@"dimm_manufacturer"],
+                    [item valueForKey:@"dimm_size"],
+                    [item valueForKey:@"_name"],
+                    [item valueForKey:@"dimm_serial_number"],
+                    [item valueForKey:@"dimm_part_number"],
+                    [item valueForKey:@"dimm_speed"],
+                    !![[data objectForKey:@"global_ecc_state"] isEqualToString:@"ecc_enabled"]);
             }
         }
+#ifdef __arm64__
         else
         {
             // for Apple Silicon
@@ -115,7 +131,8 @@ const char* ffDetectPhysicalMemory(FFlist* result)
                 nil,
                 false);
         }
+#endif
     }
-
+    POOLEND
     return NULL;
 }

@@ -1,21 +1,24 @@
 #include "fastfetch.h"
 #include "wmtheme.h"
 
-#import <Foundation/Foundation.h>
+#include <Foundation/Foundation.h>
+
+#include <AvailabilityMacros.h>
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1090
+#define POOLSTART NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+#define POOLEND   [pool release];
+#else
+#define POOLSTART
+#define POOLEND
+#endif
 
 bool ffDetectWmTheme(FFstrbuf* themeOrError)
 {
-    NSError* error;
-    NSString* fileName = [NSString stringWithFormat:@"file://%s/Library/Preferences/.GlobalPreferences.plist", instance.state.platform.homeDir.chars];
-    NSDictionary* dict = [NSDictionary dictionaryWithContentsOfURL:[NSURL URLWithString:fileName]
-                                       error:&error];
-    if(error)
-    {
-        ffStrbufAppendS(themeOrError, error.localizedDescription.UTF8String);
-        return false;
-    }
+    POOLSTART
+    NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:[NSHomeDirectory() stringByAppendingPathComponent:@"/Library/Preferences/.GlobalPreferences.plist"]];
 
-    NSNumber* wmThemeColor = dict[@"AppleAccentColor"];
+    NSNumber* wmThemeColor = [dict valueForKey:@"AppleAccentColor"];
     if(!wmThemeColor)
         ffStrbufAppendS(themeOrError, "Multicolor");
     else
@@ -34,7 +37,8 @@ bool ffDetectWmTheme(FFstrbuf* themeOrError)
         }
     }
 
-    NSString* wmTheme = dict[@"AppleInterfaceStyle"];
+    NSString* wmTheme = [dict valueForKey:@"AppleInterfaceStyle"];
     ffStrbufAppendF(themeOrError, " (%s)", wmTheme ? wmTheme.UTF8String : "Light");
+    POOLEND
     return true;
 }

@@ -2,12 +2,22 @@
 
 #import <Foundation/Foundation.h>
 
+#include <AvailabilityMacros.h>
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1090
+#define POOLSTART NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+#define POOLEND   [pool release];
+#else
+#define POOLSTART
+#define POOLEND
+#endif
+
 static void appendColor(FFstrbuf* str, NSDictionary* color)
 {
-    int r = (int) (((NSNumber*) color[@"red"]).doubleValue * 255);
-    int g = (int) (((NSNumber*) color[@"green"]).doubleValue * 255);
-    int b = (int) (((NSNumber*) color[@"blue"]).doubleValue * 255);
-    int a = (int) (((NSNumber*) color[@"alpha"]).doubleValue * 255);
+    int r = (int) (((NSNumber*) [color valueForKey:@"red"]).doubleValue * 255);
+    int g = (int) (((NSNumber*) [color valueForKey:@"green"]).doubleValue * 255);
+    int b = (int) (((NSNumber*) [color valueForKey:@"blue"]).doubleValue * 255);
+    int a = (int) (((NSNumber*) [color valueForKey:@"alpha"]).doubleValue * 255);
 
     if (r == 255 && g == 255 && b == 255 && a == 255)
         ffStrbufAppendS(str, "White");
@@ -19,34 +29,28 @@ static void appendColor(FFstrbuf* str, NSDictionary* color)
 
 void ffDetectCursor(FFCursorResult* result)
 {
-    NSError* error;
-    NSString* fileName = [NSString stringWithFormat:@"file://%s/Library/Preferences/com.apple.universalaccess.plist", instance.state.platform.homeDir.chars];
-    NSDictionary* dict = [NSDictionary dictionaryWithContentsOfURL:[NSURL URLWithString:fileName]
-                                       error:&error];
-    if(error)
-    {
-        ffStrbufAppendS(&result->error, error.localizedDescription.UTF8String);
-        return;
-    }
+    POOLSTART
+    NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:[NSHomeDirectory() stringByAppendingPathComponent:@"/Library/Preferences/com.apple.universalaccess.plist"]];
 
     NSDictionary* color;
 
     ffStrbufAppendS(&result->theme, "Fill - ");
-    if ((color = dict[@"cursorFill"]))
+    if ((color = [dict valueForKey:@"cursorFill"]))
         appendColor(&result->theme, color);
     else
         ffStrbufAppendS(&result->theme, "Black");
 
     ffStrbufAppendS(&result->theme, ", Outline - ");
 
-    if ((color = dict[@"cursorOutline"]))
+    if ((color = [dict valueForKey:@"cursorOutline"]))
         appendColor(&result->theme, color);
     else
         ffStrbufAppendS(&result->theme, "White");
 
-    NSNumber* mouseDriverCursorSize = dict[@"mouseDriverCursorSize"];
+    NSNumber* mouseDriverCursorSize = [dict valueForKey:@"mouseDriverCursorSize"];
     if (mouseDriverCursorSize)
         ffStrbufAppendF(&result->size, "%d", (int) (mouseDriverCursorSize.doubleValue * 32));
     else
         ffStrbufAppendS(&result->size, "32");
+    POOLEND
 }

@@ -6,6 +6,35 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+
+#ifdef CG_LEGACY_API
+
+#include "common/sysctl.h"
+#include <ApplicationServices/ApplicationServices.h>
+
+typedef union
+{
+    uint8_t rawData[0xDC];
+    struct
+    {
+        uint32_t mode;
+        uint32_t flags;     // 0x4
+        uint32_t width;     // 0x8
+        uint32_t height;    // 0xC
+        uint32_t depth;     // 0x10
+        uint32_t dc2[42];
+        uint16_t dc3;
+        uint16_t freq;      // 0xBC
+        uint32_t dc4[4];
+        float density;      // 0xD0
+    } derived;
+} modes_D4;
+
+void CGSGetCurrentDisplayMode(CGDirectDisplayID display, int* modeNum);
+void CGSGetDisplayModeDescriptionOfLength(CGDirectDisplayID display, int idx, modes_D4* mode, int length);
+
+#endif
+
 #include <CoreGraphics/CGDirectDisplay.h>
 #include <CoreVideo/CVDisplayLink.h>
 
@@ -27,11 +56,22 @@ static void detectDisplays(FFDisplayServerResult* ds)
     FF_STRBUF_AUTO_DESTROY buffer = ffStrbufCreate();
     for(uint32_t i = 0; i < screenCount; i++)
     {
+#ifdef CG_LEGACY_API
+        int modeID;
+        CGSGetCurrentDisplayMode(screens[i], &modeID);
+        modes_D4 mode;
+        CGSGetDisplayModeDescriptionOfLength(screens[i], modeID, &mode, 0xD4);
+#endif
         CGDirectDisplayID screen = screens[i];
+#ifndef CG_LEGACY_API
         CGDisplayModeRef mode = CGDisplayCopyDisplayMode(screen);
+
         if(mode)
+#endif
         {
-            //https://github.com/glfw/glfw/commit/aab08712dd8142b642e2042e7b7ba563acd07a45
+#ifdef CG_LEGACY_API
+            double refreshRate = ffdsParseRefreshRate(mode.derived.freq);
+#else
             double refreshRate = CGDisplayModeGetRefreshRate(mode);
 
             if (refreshRate == 0)
@@ -45,7 +85,7 @@ static void detectDisplays(FFDisplayServerResult* ds)
                     CVDisplayLinkRelease(link);
                 }
             }
-
+#endif
             ffStrbufClear(&buffer);
             CFDictionaryRef FF_CFTYPE_AUTO_RELEASE displayInfo = NULL;
             #ifdef MAC_OS_X_VERSION_10_15
@@ -83,11 +123,21 @@ static void detectDisplays(FFDisplayServerResult* ds)
             }
 
             FFDisplayResult* display = ffdsAppendDisplay(ds,
+#ifdef CG_LEGACY_API
+                mode.derived.width,
+                mode.derived.height,
+#else
                 (uint32_t)CGDisplayModeGetPixelWidth(mode),
                 (uint32_t)CGDisplayModeGetPixelHeight(mode),
+#endif
                 refreshRate,
+#if MAC_OS_X_VERSION_MIN_REQUIRED > 1070
                 (uint32_t)CGDisplayModeGetWidth(mode),
                 (uint32_t)CGDisplayModeGetHeight(mode),
+#else
+                0,
+                0,
+#endif
                 (uint32_t)CGDisplayRotation(screen),
                 &buffer,
                 CGDisplayIsBuiltin(screen) ? FF_DISPLAY_TYPE_BUILTIN : FF_DISPLAY_TYPE_EXTERNAL,
@@ -99,6 +149,7 @@ static void detectDisplays(FFDisplayServerResult* ds)
             );
             if (display)
             {
+#ifndef CG_LEGACY_API
                 // https://stackoverflow.com/a/33519316/9976392
                 // Also shitty, but better than parsing `CFCopyDescription(mode)`
                 CFDictionaryRef dict = (CFDictionaryRef) *((int64_t *)mode + 2);
@@ -125,7 +176,7 @@ static void detectDisplays(FFDisplayServerResult* ds)
                         display->hdrStatus = FF_DISPLAY_HDR_STATUS_UNSUPPORTED;
                 }
                 #endif
-
+#endif
                 display->serial = CGDisplaySerialNumber(screen);
                 int value;
                 if (ffCfDictGetInt(displayInfo, CFSTR(kDisplayYearOfManufacture), &value) == NULL)
@@ -133,7 +184,9 @@ static void detectDisplays(FFDisplayServerResult* ds)
                 if (ffCfDictGetInt(displayInfo, CFSTR(kDisplayWeekOfManufacture), &value) == NULL)
                     display->manufactureWeek = (uint16_t) value;
             }
+#ifndef CG_LEGACY_API
             CGDisplayModeRelease(mode);
+#endif
         }
         CGDisplayRelease(screen);
     }
@@ -142,7 +195,11 @@ static void detectDisplays(FFDisplayServerResult* ds)
 void ffConnectDisplayServerImpl(FFDisplayServerResult* ds)
 {
     {
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1080
         FF_CFTYPE_AUTO_RELEASE CFMachPortRef port = CGWindowServerCreateServerPort();
+#else
+        FF_CFTYPE_AUTO_RELEASE CFMachPortRef port = CGWindowServerCFMachPort();
+#endif
         if (port)
         {
             ffStrbufSetStatic(&ds->wmProcessName, "WindowServer");

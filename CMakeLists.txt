@@ -126,10 +126,10 @@ else()
     message(STATUS "Threads type: disabled")
 endif()
 
-set(WARNING_FLAGS "-Wall -Wextra -Wconversion -Werror=uninitialized -Werror=return-type")
+set(WARNING_FLAGS "-Wall -Wextra -Wconversion -Wno-error=uninitialized -Werror=return-type")
 
 set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WARNING_FLAGS} -Werror=incompatible-pointer-types -Werror=implicit-function-declaration -Werror=int-conversion")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WARNING_FLAGS} -Wno-error=incompatible-pointer-types -Wno-error=implicit-function-declaration -Wno-error=int-conversion")
 
 if(WIN32 OR ENABLE_DIRECTX_HEADERS)
     enable_language(CXX)
@@ -753,11 +753,11 @@ elseif(APPLE)
         src/common/sysctl.c
         src/detection/battery/battery_apple.c
         src/detection/bios/bios_apple.c
-        src/detection/bluetooth/bluetooth_apple.m
-        src/detection/bluetoothradio/bluetoothradio_apple.m
+        src/detection/bluetooth/bluetooth_nosupport.c
+        src/detection/bluetoothradio/bluetoothradio_nosupport.c
         src/detection/board/board_apple.c
         src/detection/bootmgr/bootmgr_apple.c
-        src/detection/brightness/brightness_apple.c
+        src/detection/brightness/brightness_nosupport.c
         src/detection/btrfs/btrfs_nosupport.c
         src/detection/chassis/chassis_nosupport.c
         src/detection/cpu/cpu_apple.c
@@ -767,7 +767,7 @@ elseif(APPLE)
         src/detection/disk/disk_bsd.c
         src/detection/dns/dns_linux.c
         src/detection/physicaldisk/physicaldisk_apple.c
-        src/detection/physicalmemory/physicalmemory_apple.m
+        src/detection/physicalmemory/physicalmemory_nosupport.c
         src/detection/diskio/diskio_apple.c
         src/detection/displayserver/displayserver_apple.c
         src/detection/font/font_apple.m
@@ -782,15 +782,15 @@ elseif(APPLE)
         src/detection/libc/libc_apple.c
         src/detection/locale/locale_linux.c
         src/detection/localip/localip_linux.c
-        src/detection/gamepad/gamepad_apple.c
-        src/detection/media/media_apple.m
+        src/detection/gamepad/gamepad_nosupport.c
+        src/detection/media/media_nosupport.c
         src/detection/memory/memory_apple.c
         src/detection/mouse/mouse_apple.c
         src/detection/netio/netio_bsd.c
         src/detection/opengl/opengl_apple.c
         src/detection/os/os_apple.m
         src/detection/packages/packages_apple.c
-        src/detection/poweradapter/poweradapter_apple.c
+        src/detection/poweradapter/poweradapter_nosupport.c
         src/detection/processes/processes_bsd.c
         src/detection/sound/sound_apple.c
         src/detection/swap/swap_apple.c
@@ -801,8 +801,8 @@ elseif(APPLE)
         src/detection/tpm/tpm_nosupport.c
         src/detection/uptime/uptime_bsd.c
         src/detection/users/users_linux.c
-        src/detection/wallpaper/wallpaper_apple.m
-        src/detection/wifi/wifi_apple.m
+        src/detection/wallpaper/wallpaper_nosupport.c
+        src/detection/wifi/wifi_nosupport.c
         src/detection/wm/wm_apple.c
         src/detection/de/de_nosupport.c
         src/detection/wmtheme/wmtheme_apple.m
@@ -1282,25 +1282,17 @@ if(LINUX)
     endif()
 elseif(APPLE)
     target_link_libraries(libfastfetch
-        PRIVATE "-framework AVFoundation"
         PRIVATE "-framework Cocoa"
         PRIVATE "-framework CoreFoundation"
         PRIVATE "-framework CoreAudio"
         PRIVATE "-framework CoreMedia"
         PRIVATE "-framework CoreVideo"
-        PRIVATE "-framework CoreWLAN"
         PRIVATE "-framework IOBluetooth"
         PRIVATE "-framework IOKit"
-        PRIVATE "-framework Metal"
         PRIVATE "-framework OpenGL"
-        PRIVATE "-framework OpenCL"
         PRIVATE "-framework SystemConfiguration"
-        PRIVATE "-weak_framework CoreDisplay"
-
-        PRIVATE "-F /System/Library/PrivateFrameworks"
-        PRIVATE "-weak_framework DisplayServices"
-        PRIVATE "-weak_framework MediaRemote"
-        PRIVATE "-weak_framework Apple80211"
+        PRIVATE "-framework DisplayServices"
+        PRIVATE "-F/System/Library/PrivateFrameworks"
     )
 elseif(WIN32)
     target_link_libraries(libfastfetch

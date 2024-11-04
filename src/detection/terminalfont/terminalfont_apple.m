@@ -5,7 +5,8 @@
 
 #include <stdlib.h>
 #include <string.h>
-#import <Foundation/Foundation.h>
+#include <Foundation/Foundation.h>
+#include <AvailabilityMacros.h>
 
 static void detectIterm2(FFTerminalFontResult* terminalFont)
 {
@@ -18,6 +19,7 @@ static void detectIterm2(FFTerminalFontResult* terminalFont)
 
     NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:[NSHomeDirectory() stringByAppendingPathComponent:@"/Library/Preferences/com.googlecode.iterm2.plist"]];
 
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050 // This chunk of code breaks linkage on 10.4
     for(NSDictionary* bookmark in dict[@"New Bookmarks"])
     {
         if(![[bookmark valueForKey:@"Name"] isEqualToString:[NSString stringWithUTF8String:profile]])
@@ -40,6 +42,7 @@ static void detectIterm2(FFTerminalFontResult* terminalFont)
         }
         return;
     }
+#endif
 
     ffStrbufAppendF(&terminalFont->error, "find profile `%s` bookmark failed", profile);
 }

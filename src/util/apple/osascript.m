@@ -5,6 +5,7 @@
 #include <CoreData/CoreData.h>
 
 bool ffOsascript(const char* input, FFstrbuf* result) {
+    POOLSTART
     NSString* appleScript = [NSString stringWithUTF8String: input];
     NSAppleScript* script = [[NSAppleScript alloc] initWithSource:appleScript];
     NSDictionary* errInfo = nil;
@@ -13,5 +14,6 @@ bool ffOsascript(const char* input, FFstrbuf* result) {
         return false;
 
     ffStrbufSetS(result, [[descriptor stringValue] cStringUsingEncoding:NSUTF8StringEncoding]);
+    POOLEND
     return true;
 }

@@ -2,6 +2,16 @@
 
 #import <Foundation/Foundation.h>
 
+#include <AvailabilityMacros.h>
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1090
+#define POOLSTART NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+#define POOLEND   [pool release];
+#else
+#define POOLSTART
+#define POOLEND
+#endif
+
 static void appendColor(FFstrbuf* str, NSDictionary* color)
 {
     int r = (int) (((NSNumber*) color[@"red"]).doubleValue * 255);
@@ -19,6 +29,7 @@ static void appendColor(FFstrbuf* str, NSDictionary* color)
 
 void ffDetectCursor(FFCursorResult* result)
 {
+    POOLSTART
     NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:[NSHomeDirectory() stringByAppendingPathComponent:@"/Library/Preferences/com.apple.universalaccess.plist"]];
 
     NSDictionary* color;
@@ -41,4 +52,5 @@ void ffDetectCursor(FFCursorResult* result)
         ffStrbufAppendF(&result->size, "%d", (int) (mouseDriverCursorSize.doubleValue * 32));
     else
         ffStrbufAppendS(&result->size, "32");
+    POOLEND
 }

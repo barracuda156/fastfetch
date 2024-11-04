@@ -8,8 +8,19 @@
 #include <string.h>
 #include <Foundation/Foundation.h>
 
+#include <AvailabilityMacros.h>
+
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1090
+#define POOLSTART NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+#define POOLEND   [pool release];
+#else
+#define POOLSTART
+#define POOLEND
+#endif
+
 static void parseSystemVersion(FFOSResult* os)
 {
+    POOLSTART
     NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:
         @"/System/Library/CoreServices/SystemVersion.plist"];
 
@@ -21,6 +32,7 @@ static void parseSystemVersion(FFOSResult* os)
         ffStrbufInitS(&os->version, [value UTF8String]);
     if ((value = [dict objectForKey:@"ProductBuildVersion"]))
         ffStrbufInitS(&os->buildID, [value UTF8String]);
+    POOLEND
 }
 
 static bool detectOSCodeName(FFOSResult* os)

@@ -65,6 +65,7 @@ static void detectFsInfo(struct statfs* fs, FFDisk* disk)
 
 #include <sys/attr.h>
 #include <unistd.h>
+#include <AvailabilityMacros.h>
 
 #ifndef MAC_OS_X_VERSION_10_15
     #define MNT_REMOVABLE 0x00000200
@@ -152,9 +153,11 @@ const char* ffDetectDisksImpl(FFDiskOptions* options, FFlist* disks)
         #define st_birthtimespec __st_birthtim
         #endif
 
+        #if defined(MAC_OS_X_VERSION_10_15) || !defined(__APPLE__)
         struct stat st;
         if(stat(fs->f_mntonname, &st) == 0 && st.st_birthtimespec.tv_sec > 0)
             disk->createTime = (uint64_t)((st.st_birthtimespec.tv_sec * 1000) + (st.st_birthtimespec.tv_nsec / 1000000));
+        #endif
     }
 
     return NULL;

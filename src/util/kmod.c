@@ -35,7 +35,10 @@ bool ffKmodLoaded(const char* modName)
 #include "util/apple/cf_helpers.h"
 #include <IOKit/kext/KextManager.h>
 #include <CoreFoundation/CoreFoundation.h>
+#include <AvailabilityMacros.h>
 
+// KextManagerCopyLoadedKextInfo available in 10.7+
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
 bool ffKmodLoaded(const char* modName)
 {
     FF_CFTYPE_AUTO_RELEASE CFStringRef name = CFStringCreateWithCString(kCFAllocatorDefault, modName, kCFStringEncodingUTF8);
@@ -44,6 +47,12 @@ bool ffKmodLoaded(const char* modName)
     FF_CFTYPE_AUTO_RELEASE CFDictionaryRef kextInfo = KextManagerCopyLoadedKextInfo(identifiers, keys);
     return CFDictionaryContainsKey(kextInfo, name);
 }
+#else // MAC_OS_X_VERSION_MIN_REQUIRED < 1070
+bool ffKmodLoaded(FF_MAYBE_UNUSED const char* modName)
+{
+    return true; // Don't generate kernel module related errors
+}
+#endif // MAC_OS_X_VERSION_MIN_REQUIRED
 #else
 bool ffKmodLoaded(FF_MAYBE_UNUSED const char* modName)
 {

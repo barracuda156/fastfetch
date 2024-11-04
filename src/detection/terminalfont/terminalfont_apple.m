@@ -20,12 +20,12 @@ static void detectIterm2(FFTerminalFontResult* terminalFont)
     NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:[NSHomeDirectory() stringByAppendingPathComponent:@"/Library/Preferences/com.googlecode.iterm2.plist"]];
 
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050 // This chunk of code breaks linkage on 10.4
-    for(NSDictionary* bookmark in dict[@"New Bookmarks"])
+    for(NSDictionary* bookmark in [dict valueForKey:@"New Bookmarks"])
     {
         if(![[bookmark valueForKey:@"Name"] isEqualToString:[NSString stringWithUTF8String:profile]])
             continue;
 
-        NSString* normalFont = bookmark[@"Normal Font"];
+        NSString* normalFont = [bookmark valueForKey:@"Normal Font"];
         if(!normalFont)
         {
             ffStrbufAppendF(&terminalFont->error, "`Normal Font` key in profile `%s` doesn't exist", profile);
@@ -33,10 +33,10 @@ static void detectIterm2(FFTerminalFontResult* terminalFont)
         }
         ffFontInitWithSpace(&terminalFont->font, [normalFont UTF8String]);
 
-        NSNumber* useNonAsciiFont = bookmark[@"Use Non-ASCII Font"];
+        NSNumber* useNonAsciiFont = [bookmark valueForKey:@"Use Non-ASCII Font"];
         if([useNonAsciiFont boolValue])
         {
-            NSString* nonAsciiFont = bookmark[@"Non Ascii Font"];
+            NSString* nonAsciiFont = [bookmark valueForKey:@"Non Ascii Font"];
             if (nonAsciiFont)
                 ffFontInitWithSpace(&terminalFont->fallback, [nonAsciiFont UTF8String]);
         }
@@ -65,13 +65,13 @@ static void detectWarpTerminal(FFTerminalFontResult* terminalFont)
 {
     NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:[NSHomeDirectory() stringByAppendingPathComponent:@"/Library/Preferences/dev.warp.Warp-Stable.plist"]];
 
-    NSString* fontName = dict[@"FontName"];
+    NSString* fontName = [dict valueForKey:@"FontName"];
     if(!fontName)
         fontName = @"Hack";
     else
         fontName = [fontName stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"\""]];
 
-    NSString* fontSize = dict[@"FontSize"];
+    NSString* fontSize = [dict valueForKey:@"FontSize"];
     if(!fontSize)
         fontSize = @"13";
 

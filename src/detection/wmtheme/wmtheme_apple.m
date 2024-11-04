@@ -18,7 +18,7 @@ bool ffDetectWmTheme(FFstrbuf* themeOrError)
     POOLSTART
     NSDictionary* dict = [NSDictionary dictionaryWithContentsOfFile:[NSHomeDirectory() stringByAppendingPathComponent:@"/Library/Preferences/.GlobalPreferences.plist"]];
 
-    NSNumber* wmThemeColor = dict[@"AppleAccentColor"];
+    NSNumber* wmThemeColor = [dict valueForKey:@"AppleAccentColor"];
     if(!wmThemeColor)
         ffStrbufAppendS(themeOrError, "Multicolor");
     else
@@ -37,7 +37,7 @@ bool ffDetectWmTheme(FFstrbuf* themeOrError)
         }
     }
 
-    NSString* wmTheme = dict[@"AppleInterfaceStyle"];
+    NSString* wmTheme = [dict valueForKey:@"AppleInterfaceStyle"];
     ffStrbufAppendF(themeOrError, " (%s)", wmTheme ? wmTheme.UTF8String : "Light");
     POOLEND
     return true;

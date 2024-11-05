@@ -175,7 +175,7 @@ const char* ffDetectDisksImpl(FFDiskOptions* options, FFlist* disks)
         #ifdef __OpenBSD__
         #define st_birthtimespec __st_birthtim
         #endif
-        #ifndef __DragonFly__
+        #if !defined(__DragonFly__) && !(defined(__APPLE__) && defined(__ppc__))
         struct stat st;
         if(stat(fs->f_mntonname, &st) == 0 && st.st_birthtimespec.tv_sec > 0)
             disk->createTime = (uint64_t)((st.st_birthtimespec.tv_sec * 1000) + (st.st_birthtimespec.tv_nsec / 1000000));
